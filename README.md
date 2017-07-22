@@ -18,4 +18,5 @@ We use tensorflow (0.12.1) to implement our NN model.
 Copy "../wiki_cnn.pkl" into "./data" before running the following command:
 ~~~
 python run.py --train --plus_cnt=True
+python run.py --test --plus_cnt=True
 ~~~
