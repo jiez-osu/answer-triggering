@@ -36,8 +36,6 @@ def show_qual_rslt(mydata,
 	regus=None,	# [batch_size]
 	ques_attn=None, # [batch_size, ques_len]
 	sent_attn=None, # [batch_size, sent_num, sent_len]
-	pw_sent_preds=None,
-	pw_preds=None,
 	s_w_mask=None,
 	s_mask=None,
 	rslt=None,
@@ -94,28 +92,6 @@ def show_qual_rslt(mydata,
 						printtoscreen += ' {}'.format(mydata.id2word[token])
 			print(printtoscreen)
 
-			# DISPLAY PAIRWISE PREDICTION RESULTS
-			printtoscreen = '\n'
-			if pw_sent_preds is not None:
-				pw_preds = pw_sent_preds[batch_id,:,:,i]
-				# Tabel header
-				printtoscreen += '{:>15} | '.format('')
-				for s_step in xrange(pw_preds.shape[1]):
-					if sentences[batch_id,i,s_step] == 0: continue # Skip if sentence token is padding
-					printtoscreen += '{:5s} '.format('<{:d}>'.format(s_step))
-				printtoscreen += '\n'
-				# Table body
-				for q_step in xrange(pw_preds.shape[0]):
-					q_w_id = question[batch_id,q_step]
-					if q_w_id == 0: continue # Skip if question token is padding
-					printtoscreen += '{:>15} | '.format(mydata.id2word[q_w_id][:15])
-					for s_step in xrange(pw_preds.shape[1]):
-						if sentences[batch_id,i,s_step] == 0: continue # Skip if sentence token is padding
-						printtoscreen += '{:.3f} '.format(pw_preds[q_step, s_step])
-					printtoscreen += '\n'
-				print(printtoscreen)
-				# print(np.array_str(pw_sent_preds[:,:,:,i], precision=3, max_line_width=400))
-
 		if rslt is not None: print(idx2category[rslt[batch_id]])
 		if regus is None:
 			print('Answer trigger: truth=%d, prediction=%.3f, cost=%.3f (batch)' %
@@ -135,13 +111,13 @@ def test_model(FLAGS, session, m, config, mydata, if_test=False,
 	regus = []
 
 	if if_test:
-		print ("----- ----- %sTesting ----- -----") 
+		print ("----- ----- Testing ----- -----") 
 		buckets = mydata.test_buckets
 	else:
-		print ("----- ----- %sValidation ----- -----")
+		print ("----- ----- Validation ----- -----")
 		buckets = mydata.valid_buckets
 	if if_load_ckpt:
-		print ("----- ----- %sLoading checkpoint ----- -----")
+		print ("----- ----- Loading checkpoint ----- -----")
 		restore_checkpoint(FLAGS, session, m)
 
 	m.eval_stat.reset()
@@ -218,7 +194,7 @@ def test_model(FLAGS, session, m, config, mydata, if_test=False,
 											 sent_labels[overlap:], sent_preds[overlap:], sent_costs,
 											 regus=regus[-1],
 											 ques_attn=ques_attn, sent_attn=sent_attn,
-											 rslt=rslt, pw_sent_preds=pw_sent_preds,
+											 rslt=rslt, 
 											 s_w_mask=s_w_mask, s_mask=s_mask,
 											 batch_size=m.batch_size - overlap)
 
@@ -275,7 +251,7 @@ def train_model(FLAGS, session, m, config, mydata, m_valid=None):
 	test_costs, test_accus, test_f1s = [], [], []
 
 	for epoch_cnt in range(config.max_max_epoch):
-		print("\n----- ----- %sTraining ----- -----")
+		print("\n----- ----- Training ----- -----")
 		# if	epoch_cnt > config.max_epoch: session.run(m._lr_update)
 		# print("Epoch: %d \tLearning rate: %.3f" % (epoch_cnt, m.lr.eval()))
 		print("Epoch: %d" % (epoch_cnt))
@@ -350,16 +326,39 @@ def train_model(FLAGS, session, m, config, mydata, m_valid=None):
 			if (epoch_cnt == config.max_max_epoch-1 and not if_saved_to_checkpoint):
 				print("Nothing saved !!!")
 				# save_checkpoint(FLAGS, session, m)
-
-  if m_valid:
-    cost, accuracy, precision, recall, f1 = \
-        test_model(FLAGS, session, m_valid, config, mydata,
-                  if_test=True, if_pretrain=if_pretrain)
-      print("test cost : %5f" % (cost))
-      print("test accu : %5f" % (accuracy))
-      print("test f1 :   %5f" % (f1))
-
-
+		
+    # RUN TEST SET ON VALIDATION MODEL
+		# (KIND OF ILLEGAL TO DO THIS DURING TRAINING,
+		# BUT HERE IT DOESN'T AFFECT MODEL SELECTION, IT'S JUST FOR CHECK THE
+		# RESULTS WHILE THE TRAINING AND VALIDATION GOES.)
+		if m_valid:
+			cost, accuracy, precision, recall, f1 = \
+					test_model(FLAGS, session, m_valid, config, mydata,
+										if_test=True)
+			test_costs.append(cost)
+			test_accus.append(accuracy)
+			test_f1s.append(f1)
+			# Save checkpoint and zero timer and loss.
+			if (epoch_cnt % FLAGS.epochs_per_validation == 0):
+				test_cost = np.mean(test_costs)
+				test_accu = np.mean(test_accus)
+				test_f1 = np.mean(test_f1s)
+				del test_costs[:], test_accus[:], test_f1s[:]
+				if min_test_cost is None: min_test_cost = test_cost
+				elif min_test_cost > test_cost:
+					min_test_cost = test_cost
+				if max_test_accu is None: max_test_accu = test_accu
+				elif max_test_accu < test_accu:
+					max_test_accu = test_accu
+				if max_test_f1 is None: max_test_f1 = test_f1
+				elif max_test_f1 < test_f1:
+					max_test_f1 = test_f1
+				print("test cost min: %5f" % (min_test_cost
+																			if min_test_cost is not None else -1.0))
+				print("test accu max: %5f" % (max_test_accu
+																			if max_test_accu is not None else -1.0))
+				print("test f1 max:		%5f" % (max_test_f1
+																			if max_test_f1 is not None else -1.0))
 
 
 def train_step(session, model, mydata, bucket_id, batch_size):

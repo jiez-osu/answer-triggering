@@ -78,7 +78,7 @@ def get_config():
   overwrite_config(config)
   return config
 
-def test():
+def test(if_show_qual_rslt=False):
   """Test the model."""
   buckets = BUCKETS
   train_tuple_b, valid_tuple_b, test_tuple_b, word2id, word_embeddings = \
@@ -114,7 +114,7 @@ def test():
                             is_training=False,
                             embedding_initializer=embedding_initializer)
     test_model(FLAGS, session, m, config, mydata, if_test=True,
-               if_show_qual_rslt=True, if_load_ckpt=True)
+               if_show_qual_rslt=if_show_qual_rslt, if_load_ckpt=True)
 
 
 def train():
@@ -218,8 +218,7 @@ def self_test_train():
     train_model(FLAGS, session, m, config, mydata, m_valid)
     save_checkpoint(FLAGS, session, m)
 
-
-def self_test_test():
+def self_test_test(if_show_qual_rslt=False):
   """ Self test the model with toy data, testing part.
   """
   # Load and prepare fake data
@@ -257,7 +256,7 @@ def self_test_test():
                                  is_training=False,
                                  embedding_initializer=embedding_initializer)
     test_model(FLAGS, session, m_test, config, mydata, if_test=True,
-               if_show_qual_rslt=True, if_load_ckpt=True)
+               if_show_qual_rslt=if_show_qual_rslt, if_load_ckpt=True)
 
 
 def main(_):

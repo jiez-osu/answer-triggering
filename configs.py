@@ -41,9 +41,9 @@ class Config(object):
   min_gap = 0.7  # min prediction gap for diff label instances in a bag
   phi = 1.0
   # Combine features
-  plus_cnt = None
-  plus_qlen = None
-  plus_slen = None
+  plus_cnt = False
+  plus_qlen = False
+  plus_slen = False
 
 
 class SelfTestConfig(object):
@@ -84,9 +84,9 @@ class SelfTestConfig(object):
   min_gap = 0.5  # min prediction gap for diff label instances in a bag
   phi = 1.0
   # Combine features
-  plus_cnt = None
-  plus_qlen = None
-  plus_slen = None
+  plus_cnt = False
+  plus_qlen = False
+  plus_slen = False
 
 def print_config(config):
   """Print config to output.
