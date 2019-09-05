@@ -1,5 +1,5 @@
-# answer-triggering
-Our paper "An End-to-End Deep Framework for Answer Triggeringwith a Novel Group-Level Objective" is accpeted by EMNLP 2017.
+# GAT : Group-level Answer Triggering
+This repository contains source code for paper "An End-to-End Deep Framework for Answer Triggeringwith a Novel Group-Level Objective" is accpeted by EMNLP 2017. ([paper](https://www.aclweb.org/anthology/D17-1131))
 
 ## Dataset preparation
 We use the [WikiQA](http://research.microsoft.com/en-US/downloads/4495da01-db8c-4041-a7f6-7984a4f6a905/default.aspx) data set.
@@ -20,3 +20,15 @@ Copy "../wiki_cnn.pkl" into "./data" before running the following command:
 python run.py --train --plus_cnt=True
 python run.py --test --plus_cnt=True
 ~~~
+
+## Citation
+Please kindly cite our paper if you use the code in this repo:
+```
+@inproceedings{zhao2017end,
+  title={An end-to-end deep framework for answer triggering with a novel group-level objective},
+  author={Zhao, Jie and Su, Yu and Guan, Ziyu and Sun, Huan},
+  booktitle={Proceedings of the 2017 Conference on Empirical Methods in Natural Language Processing},
+  pages={1276--1282},
+  year={2017}
+}
+```
